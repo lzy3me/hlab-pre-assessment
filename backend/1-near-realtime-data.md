@@ -4,7 +4,7 @@ The easeist way that not require any new tech stack introduce in already running
 
 ![Composition Diagram](./composition-diagram.png)
 
-Composition Layer get all data from 3 services by fetch request from each services. Create new service for fetching request from all 3 services by using tech stack like Python, Java or in this example case using JavaScript with Express.js and Fetch API.
+Composition Layer get all data from 3 services by fetch requests from each services. Create new service for fetching requests from all 3 services by using tech stack like Python, Java or in this example case using JavaScript with Express.js and Fetch API.
 
 ```ts
 const customerAPI = 'http://customer-service/api/v1/customer';

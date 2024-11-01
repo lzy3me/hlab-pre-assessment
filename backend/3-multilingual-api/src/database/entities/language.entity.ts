@@ -14,6 +14,9 @@ export class Language extends Model {
   @Column({ type: DataType.STRING(100) })
   languageName: string;
 
+  @Column({ type: DataType.TEXT })
+  languageValidate: string;
+
   @HasMany(() => Content, "languageId")
   contents: Content[];
 

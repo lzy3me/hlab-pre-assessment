@@ -9,7 +9,7 @@ import { Product } from "src/database/entities/product.entity";
 import { Content } from "src/database/entities/content.entity";
 import { Translation } from "src/database/entities/translation.entity";
 import { Language } from "src/database/entities/language.entity";
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { InjectConnection, InjectModel } from "@nestjs/sequelize";
 import { Sequelize } from "sequelize-typescript";
 
@@ -109,36 +109,36 @@ export class ProductsService {
       page = Number(page || 1);
       pageSize = Number(pageSize || 20);
 
-      const { count, rows } = await this.translationRepo.findAndCountAll({
-        where: { translationText: { [Op.iLike]: `%${name}%` } },
-        include: [
-          {
-            model: this.contentRepo,
-            required: false,
-            foreignKey: "contentId",
-            where: { contentText: { [Op.iLike]: `%${name}%` } },
-            include: [
-              {
-                model: this.productRepo,
-                as: "nameProduct",
-                foreignKey: "nameContentId",
-              },
-            ],
-          },
-        ],
-      });
-      // const { count, rows } = await this.translationRepo.findAndCountAll({
-      //   where: { translationText: { [Op.iLike]: `%${name}%` } },
-      //   limit: pageSize,
-      //   offset: (page - 1) * pageSize,
-      // });
+      const data = await this.sequelize.query(
+        `
+    select
+      "content->nameProduct"."productId" as "productId",
+      "content"."contentText" as "productName",
+      "content"."languageId" as "originLanguage",
+      "Translation"."translationText" as "translationName",
+      "Translation"."languageId" as "translationLanguage"
+    from
+      "translation" as "Translation"
+    left join "content" as "content" on
+      "Translation"."contentId" = "content"."contentId"
+    inner join "product" as "content->nameProduct" on
+      "content"."contentId" = "content->nameProduct"."nameContentId"
+    where
+      "Translation"."translationText" ilike :name
+      or "content"."contentText" ilike :name
+    limit :pageSize offset :page
+        `,
+        {
+          type: QueryTypes.SELECT,
+          replacements: { name: `%${name}%`, page: page - 1, pageSize },
+        },
+      );
 
       return {
         success: true,
-        data: rows,
+        data: data,
         page,
         pageSize,
-        total: count,
       };
     } catch (error) {
       console.log(error);

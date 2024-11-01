@@ -12,12 +12,12 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(
+  async findAll(
     @Query("name") name: string,
     @Query("page") page: number,
     @Query("pageSize") pageSize: number,
   ) {
-    return this.productsService.findAll(name, page, pageSize);
+    return await this.productsService.findAll(name, page, pageSize);
   }
 
   @Get(":id")
