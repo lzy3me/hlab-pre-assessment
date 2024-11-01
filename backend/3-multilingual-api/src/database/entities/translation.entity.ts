@@ -1,35 +1,34 @@
-import { UUIDV4 } from "sequelize";
 import {
   BelongsTo,
   Column,
   DataType,
   ForeignKey,
-  HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
+import { Content } from "./content.entity";
 import { Language } from "./language.entity";
-import { Translation } from "./translation.entity";
 
 @Table({
-  tableName: "content",
+  tableName: "translation",
   freezeTableName: true,
   timestamps: false,
 })
-export class Content extends Model {
-  @Column({ type: DataType.UUID, defaultValue: UUIDV4, primaryKey: true })
+export class Translation extends Model {
+  @ForeignKey(() => Content)
+  @Column({ type: DataType.UUID })
   contentId: string;
 
   @Column({ type: DataType.TEXT })
-  contentText: string;
+  translationText: string;
 
   @ForeignKey(() => Language)
   @Column({ type: DataType.STRING(2) })
   languageId: string;
 
+  @BelongsTo(() => Content, "contentId")
+  content: Content;
+
   @BelongsTo(() => Language, "languageId")
   language: Language;
-
-  @HasMany(() => Translation, "contentId")
-  translations: Translation[];
 }

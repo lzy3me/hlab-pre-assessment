@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize-typescript";
 import { Product } from "./entities/product.entity";
 import { Content } from "./entities/content.entity";
 import { Language } from "./entities/language.entity";
+import { Translation } from "./entities/translation.entity";
 
 export const databaseProviders = [
   {
@@ -13,9 +14,9 @@ export const databaseProviders = [
         port: 3306,
         username: "root",
         password: "password",
-        database: "nest",
+        database: "hlab",
       });
-      sequelize.addModels([Product, Content, Language]);
+      sequelize.addModels([Product, Content, Language, Translation]);
       await sequelize.sync();
       return sequelize;
     },
