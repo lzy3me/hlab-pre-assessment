@@ -12,7 +12,7 @@ The database design consisting with `product`, `content`, `translation` and `lan
 From this design. It can have more than just 2 languages and more flexible if you want to add another language into system.
 
 ## Validation
-TODO: Describe validation!!!
+To validate which language input with each languageId is the correct one. I design to use Regular Expression implant in `language` table and then check for each input with correct languageId tag. if languageId not found or input incorrect will reject and rollback current data insert.
 
 ## Testing
-TODO: Describe testing!!!
+For testing. This is kinda new to me, Because all of my pass work I didn't have chance to do an proper unit testing. So I used ChatGPT to assisting and do the research for it. But from my latest work they run unit testing within CI/CD pipeline before each deployment to verify code integrity and submit to Tester for verification. If everything good to go we're ready to do integration tests, Which every components from current circle will be run full unit testing and submit to Tester for verify again.
