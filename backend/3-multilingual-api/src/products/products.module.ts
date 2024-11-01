@@ -1,19 +1,17 @@
 import { Module } from "@nestjs/common";
 import { ProductsService } from "./products.service";
 import { ProductsController } from "./products.controller";
-import { productProvider } from "src/database/providers/product.providers";
-import { contentProviders } from "src/database/providers/content.providers";
-import { translationProviders } from "src/database/providers/translation.providers";
-import { languageProviders } from "src/database/providers/language.providers";
+import { SequelizeModule } from "@nestjs/sequelize";
+import { Product } from "src/database/entities/product.entity";
+import { Content } from "src/database/entities/content.entity";
+import { Language } from "src/database/entities/language.entity";
+import { Translation } from "src/database/entities/translation.entity";
 
 @Module({
-  controllers: [ProductsController],
-  providers: [
-    ProductsService,
-    ...productProvider,
-    ...contentProviders,
-    ...translationProviders,
-    ...languageProviders,
+  imports: [
+    SequelizeModule.forFeature([Product, Content, Language, Translation]),
   ],
+  controllers: [ProductsController],
+  providers: [ProductsService],
 })
 export class ProductsModule {}

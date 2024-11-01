@@ -12,8 +12,12 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@Query("name") name: string) {
-    return this.productsService.findAll(name);
+  findAll(
+    @Query("name") name: string,
+    @Query("page") page: number,
+    @Query("pageSize") pageSize: number,
+  ) {
+    return this.productsService.findAll(name, page, pageSize);
   }
 
   @Get(":id")

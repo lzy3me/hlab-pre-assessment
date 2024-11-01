@@ -1,58 +1,152 @@
-import { Inject, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { Product } from "src/database/entities/product.entity";
 import { Content } from "src/database/entities/content.entity";
 import { Translation } from "src/database/entities/translation.entity";
 import { Language } from "src/database/entities/language.entity";
-import { Op, Transaction } from "sequelize";
+import { Op } from "sequelize";
+import { InjectConnection, InjectModel } from "@nestjs/sequelize";
+import { Sequelize } from "sequelize-typescript";
 
 @Injectable()
 export class ProductsService {
   constructor(
-    @Inject("PRODUCT_REPOSITORY")
+    @InjectModel(Product)
     private productRepo: typeof Product,
-    @Inject("CONTENT_REPOSITORY")
+    @InjectModel(Content)
     private contentRepo: typeof Content,
-    @Inject("TRANSLATION_REPOSITORY")
+    @InjectModel(Translation)
     private translationRepo: typeof Translation,
-    @Inject("LANGUAGE_REPOSITORY")
+    @InjectModel(Language)
     private languageRepo: typeof Language,
+    @InjectConnection()
+    private readonly sequelize: Sequelize,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
+    const txn = await this.sequelize.transaction();
     try {
-      await this.sequelize.transaction(async (txn: Transaction) => {
-        const productNameBody = {
-          contentText: createProductDto.productName,
-          languageId: createProductDto.originLanguage,
-        };
+      const { originLanguage, productName, productDescription, translations } =
+        createProductDto;
 
-        const productDescBody = {
-          contentText: createProductDto.productDescription,
-          languageId: createProductDto.originLanguage,
-        };
+      const productNameBody = {
+        contentText: productName,
+        languageId: originLanguage,
+      };
 
-        const productNameContent = this.contentRepo.create(productNameBody, {
+      const productDescBody = {
+        contentText: productDescription,
+        languageId: originLanguage,
+      };
+
+      const productNameContent = await this.contentRepo.create(
+        productNameBody,
+        {
           transaction: txn,
-        });
-        const productDescContent = this.contentRepo.create(productDescBody, {
+        },
+      );
+      const productDescContent = await this.contentRepo.create(
+        productDescBody,
+        {
           transaction: txn,
-        });
+        },
+      );
+
+      const productBody = {
+        nameContentId: productNameContent.contentId,
+        descriptionContentId: productDescContent.contentId,
+      };
+
+      const product = await this.productRepo.create(productBody, {
+        transaction: txn,
       });
-    } catch (error) {}
 
-    return "This action adds a new product";
-  }
+      await Promise.all(
+        translations.map(async (translation) => {
+          const translateNameBody = {
+            languageId: translation.language,
+            translationText: translation.productName,
+            contentId: productNameContent.contentId,
+          };
 
-  findAll(name: string) {
-    try {
-      const translations = this.translationRepo.findAll({
-        where: { translationText: { [Op.iLike]: name } },
-      });
+          const translateDescBody = {
+            languageId: translation.language,
+            translationText: translation.productDescription,
+            contentId: productDescContent.contentId,
+          };
 
-      return translations;
+          await this.translationRepo.create(translateNameBody, {
+            transaction: txn,
+          });
+          await this.translationRepo.create(translateDescBody, {
+            transaction: txn,
+          });
+        }),
+      );
+
+      await txn.commit();
+      return { status: "ok", productId: product.id };
     } catch (error) {
       console.log("An error has occurred : %s", error);
+      await txn.rollback();
+      throw new HttpException(
+        {
+          success: false,
+          message: new InternalServerErrorException().message,
+        },
+        error?.http_code || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async findAll(name: string, page: number, pageSize: number) {
+    try {
+      page = Number(page || 1);
+      pageSize = Number(pageSize || 20);
+
+      const { count, rows } = await this.translationRepo.findAndCountAll({
+        where: { translationText: { [Op.iLike]: `%${name}%` } },
+        include: [
+          {
+            model: this.contentRepo,
+            required: false,
+            foreignKey: "contentId",
+            where: { contentText: { [Op.iLike]: `%${name}%` } },
+            include: [
+              {
+                model: this.productRepo,
+                as: "nameProduct",
+                foreignKey: "nameContentId",
+              },
+            ],
+          },
+        ],
+      });
+      // const { count, rows } = await this.translationRepo.findAndCountAll({
+      //   where: { translationText: { [Op.iLike]: `%${name}%` } },
+      //   limit: pageSize,
+      //   offset: (page - 1) * pageSize,
+      // });
+
+      return {
+        success: true,
+        data: rows,
+        page,
+        pageSize,
+        total: count,
+      };
+    } catch (error) {
+      console.log(error);
+
+      throw new HttpException(
+        { success: false, message: new InternalServerErrorException().message },
+        error?.http_code || HttpStatus.BAD_REQUEST,
+      );
     }
   }
 

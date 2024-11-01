@@ -5,11 +5,13 @@ import {
   DataType,
   ForeignKey,
   HasMany,
+  HasOne,
   Model,
   Table,
 } from "sequelize-typescript";
 import { Language } from "./language.entity";
 import { Translation } from "./translation.entity";
+import { Product } from "./product.entity";
 
 @Table({
   tableName: "content",
@@ -32,4 +34,10 @@ export class Content extends Model {
 
   @HasMany(() => Translation, "contentId")
   translations: Translation[];
+
+  @HasOne(() => Product, "nameContentId")
+  nameProduct: Product;
+
+  @HasOne(() => Product, "descriptionContentId")
+  descProduct: Product;
 }
