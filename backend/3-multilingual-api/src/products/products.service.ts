@@ -5,11 +5,11 @@ import {
   InternalServerErrorException,
 } from "@nestjs/common";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { Product } from "src/database/entities/product.entity";
-import { Content } from "src/database/entities/content.entity";
-import { Translation } from "src/database/entities/translation.entity";
-import { Language } from "src/database/entities/language.entity";
-import { Op, QueryTypes } from "sequelize";
+import { Product } from "../database/entities/product.entity";
+import { Content } from "../database/entities/content.entity";
+import { Translation } from "../database/entities/translation.entity";
+import { Language } from "../database/entities/language.entity";
+import { QueryTypes } from "sequelize";
 import { InjectConnection, InjectModel } from "@nestjs/sequelize";
 import { Sequelize } from "sequelize-typescript";
 
@@ -148,9 +148,5 @@ export class ProductsService {
         error?.http_code || HttpStatus.BAD_REQUEST,
       );
     }
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
   }
 }

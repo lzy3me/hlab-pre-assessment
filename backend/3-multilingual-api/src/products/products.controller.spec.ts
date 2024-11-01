@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ProductsController } from "./products.controller";
 import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-product.dto";
+import { HttpException, InternalServerErrorException } from "@nestjs/common";
 
 describe("ProductsController", () => {
   let productsController: ProductsController;
@@ -12,7 +13,6 @@ describe("ProductsController", () => {
     const mockProductsService = {
       create: jest.fn(),
       findAll: jest.fn(),
-      findOne: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -32,14 +32,14 @@ describe("ProductsController", () => {
   describe("create", () => {
     it("should call productsService.create with correct parameters", async () => {
       const createProductDto: CreateProductDto = {
-        originLanguage: "en",
-        productName: "Sample Product",
-        productDescription: "Sample description",
+        originLanguage: "th",
+        productName: "ผลิตภัณฑ์ตัวอย่าง",
+        productDescription: "ตัวอย่างคำอธิบาย",
         translations: [
           {
-            language: "es",
-            productName: "Producto de muestra",
-            productDescription: "Descripción de muestra",
+            language: "en",
+            productName: "Sample Product",
+            productDescription: "Sample Description",
           },
         ],
       };
@@ -51,6 +51,26 @@ describe("ProductsController", () => {
       expect(await productsController.create(createProductDto)).toEqual(result);
       expect(productsService.create).toHaveBeenCalledWith(createProductDto);
     });
+
+    it("should throw an HttpException if productsService.create fails", async () => {
+      const createProductDto: CreateProductDto = {
+        originLanguage: "th",
+        productName: "ผลิตภัณฑ์ตัวอย่าง",
+        productDescription: "ตัวอย่างคำอธิบาย",
+        translations: [],
+      };
+
+      // Simulate an error in productsService.create
+      const error = new InternalServerErrorException("Error creating product");
+      (productsService.create as jest.Mock).mockRejectedValue(error);
+
+      await expect(productsController.create(createProductDto)).rejects.toThrow(
+        HttpException,
+      );
+      await expect(productsController.create(createProductDto)).rejects.toThrow(
+        "Error creating product",
+      );
+    });
   });
 
   describe("findAll", () => {
@@ -60,10 +80,11 @@ describe("ProductsController", () => {
         success: true,
         data: [
           {
-            id: 1,
-            originLanguage: "en",
-            productName: "Sample Product",
-            productDescription: "Sample description",
+            productId: 1,
+            originLanguage: "th",
+            productName: "ผลิตภัณฑ์ตัวอย่าง",
+            translationName: "Sample Product",
+            translationLanguage: "en",
           },
         ],
         page: 1,
@@ -86,6 +107,21 @@ describe("ProductsController", () => {
         query.page,
         query.pageSize,
       );
+    });
+
+    it("should throw an HttpException if productsService.findAll fails", async () => {
+      const query = { name: "Sample", page: 1, pageSize: 10 };
+
+      // Simulate an error in productsService.findAll
+      const error = new InternalServerErrorException("Error fetching products");
+      (productsService.findAll as jest.Mock).mockRejectedValue(error);
+
+      await expect(
+        productsController.findAll(query.name, query.page, query.pageSize),
+      ).rejects.toThrow(HttpException);
+      await expect(
+        productsController.findAll(query.name, query.page, query.pageSize),
+      ).rejects.toThrow("Error fetching products");
     });
   });
 });

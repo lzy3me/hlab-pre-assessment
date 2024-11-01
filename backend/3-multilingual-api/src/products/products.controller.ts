@@ -19,9 +19,4 @@ export class ProductsController {
   ) {
     return await this.productsService.findAll(name, page, pageSize);
   }
-
-  @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.productsService.findOne(+id);
-  }
 }
